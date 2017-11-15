@@ -6,10 +6,14 @@ import java.util.Arrays;
  */
 public class Integrator {
     private Function myFunc;
-    private double[] myLimits = new double[2];
+    private double lowLimit;
+    private double highLimit;
     private double precision;
+    private double result;
+    private double partitionNumber;
+    private double runge;
 
-    public void setFunc (int n) {
+    public Integrator (int n, double lowlimit, double highlimit, double prec ) {
         switch (n) {
             case 1:
                 myFunc = new Linear();
@@ -27,48 +31,69 @@ public class Integrator {
                 System.out.println("Sorry. Such function do not exist(");
                 System.exit(1);
         }
-    }
-
-    public void setLimits (double[] limits) {
-        for (int i =0; i<limits.length; i++) {
-            this.myLimits[i]=limits[i];
+        if (lowlimit>highlimit) {
+            lowLimit = highlimit;
+            highLimit = lowlimit;
+        } else {
+            lowLimit = lowlimit;
+            highLimit = highlimit;
         }
+        precision = prec;
     }
 
-    public double[] getLimits () {
-        return this.myLimits;
+
+    public void setResult(double r) {
+        this.result = r;
     }
 
-    public void setPrecision (double prec) {
-        this.precision = prec;
+    public void setPartitionNumber(double n) {
+        this.partitionNumber = n;
+    }
+
+    public double getResult() {
+        return this.result;
+    }
+
+    public double getPartitionNumber() {
+        return this.partitionNumber;
+    }
+
+    public void setRunge(double runge) {
+        this.runge = runge;
+    }
+
+    public double getRunge() {
+        return this.runge;
     }
 
     public double getPrecision() {
         return this.precision;
     }
 
-    public double[] integrate() {
-        if (myLimits[0]>myLimits[1]) {
-            double buf = myLimits[0];
-            myLimits[0]=myLimits[1];
-            myLimits[1]= buf;
-        }
-        double range = myLimits[1] - myLimits[0];
-        double partitionNumber = range/precision;
-        double fragment = range/partitionNumber;
-        double[] result = new double[3];
-        double lowerLimit = myLimits[0];
-        for (int i = 0; i<partitionNumber; i++) {
-            result[0] += (myFunc.calculate(lowerLimit)+myFunc.calculate(lowerLimit+fragment))*fragment/2;
-            lowerLimit += fragment;
-        }
-        lowerLimit = myLimits[0];
-        fragment = fragment/2;
-        for (int i = 0; i<2*partitionNumber; i++) {
-            result[1] += (myFunc.calculate(lowerLimit)+myFunc.calculate(lowerLimit+fragment))*fragment/2;
-            lowerLimit += fragment;
-        }
-        result[2]=(result[1]-result[0])/3;
-        return result;
+    public void integrate() {
+        double range = highLimit - lowLimit;
+        double partitionNumber = 0.5;
+        double runge, oldResult, newResult;
+        do {
+            partitionNumber *= 2;
+            double step = range / partitionNumber;
+            oldResult = 0;
+            double lowerLimit = lowLimit;
+            for (int i = 0; i < partitionNumber; i++) {
+                oldResult += (myFunc.calculate(lowerLimit) + myFunc.calculate(lowerLimit + step)) * step / 2;
+                lowerLimit += step;
+            }
+            lowerLimit = lowLimit;
+            step = step / 2;
+            newResult = 0;
+            for (int i = 0; i < 2 * partitionNumber; i++) {
+                newResult += (myFunc.calculate(lowerLimit) + myFunc.calculate(lowerLimit + step)) * step / 2;
+                lowerLimit += step;
+            }
+            runge = (oldResult - newResult) / 3;
+        } while (runge > this.getPrecision());
+        this.setResult(oldResult);
+        this.setPartitionNumber(partitionNumber);
+        this.setRunge(runge);
     }
 }
